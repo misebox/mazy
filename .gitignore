@@ -1,0 +1,8 @@
+tmp/
+mazy
+src/*
+!src/*.*
+
+src/mazypkg/common/*
+!src/mazypkg/common/*.*
+
