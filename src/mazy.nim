@@ -1,4 +1,5 @@
 import mazypkg/submodule
+import mazypkg/views/perspective
 
 import unicode
 import random, strutils, sequtils, algorithm, times, os
@@ -10,15 +11,14 @@ type
 
   Screen = object
     buffer: seq[seq[Rune]]
-    w: int
-    h: int
+    x, y, w, h: int
 
   Game = object
     nb: Nimbox
     msec: int
     score: int
     state: GameState
-    buffer: Screen
+    view: PerspectiveView
 
 # globals
 var ch: char
@@ -29,9 +29,13 @@ proc newScreen(w: int, h: int): Screen =
   Screen(w: w, h: h, buffer: buf)
 
 # Game
+proc `=destroy`*(g: var Game) =
+  g.nb.shutdown()
+
 proc newGame(): Game =
   randomize()
-  Game(nb: newNimbox())
+  var view = newPerspectiveView(5, 5, 80, 40)
+  Game(nb: newNimbox(), view: view)
 
 proc display(g: var Game) =
   g.nb.clear()
@@ -46,7 +50,8 @@ proc display(g: var Game) =
     g.nb.print(sx, 2, "[Hit ENTER]")
   g.nb.print(sx, 3, fmt"[{ch}]")
 
-
+  for line in g.view.lines:
+    g.nb.print(g.view.x, g.view.y, line)
 
   g.nb.present()
   sleep(10)
@@ -62,9 +67,6 @@ proc initialize(g: var Game) =
   g.msec = 0
   g.score = 0
   g.state = GameState.playing
-
-proc `=destroy`*(g: var Game) =
-  g.nb.shutdown()
 
 proc main() =
   var g = newGame()

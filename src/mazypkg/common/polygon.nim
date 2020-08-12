@@ -3,15 +3,15 @@ import vertex
 
 
 # Polygon
-type Polygon = object
-  vertices  : seq[Vertex]
-  fill      : bool
-  fillLetter: Rune
-  border    : bool
-  core      : Vertex
-  priority  : int
+type Polygon* = object
+  vertices*: seq[Vertex]
+  fill*: bool
+  fillLetter*: Rune
+  border*: bool
+  core*: Vertex
+  priority*: int
 
-proc newPolygon(vt: seq[Vertex]): Polygon =
+proc newPolygon*(vt: seq[Vertex]): Polygon =
   # Calculate core position
   var a = newVertex(0, 0, 0)
   if vt.len > 0:
@@ -28,17 +28,17 @@ proc newPolygon(vt: seq[Vertex]): Polygon =
   p.core = a
   p
 
-proc newBoxPolygon(v1, v3: Vertex): Polygon =
-  var s = seq[seq[int]]
-  s.add(v1.slice)
-  s.add(v1.slice)
-  s.add(v3.slice)
-  s.add(v1.slice)
+proc newBoxPolygon*(v1, v3: Vertex): Polygon =
+  var s: seq[seq[int]] = @[]
+  s.add(v1.toSeq)
+  s.add(v1.toSeq)
+  s.add(v3.toSeq)
+  s.add(v1.toSeq)
   var k = 0
   for j in 0..<3:
     if s[0][j] == s[2][j]:
       k = j
-  let a, b: int = (k+1) mod 3, (k+2) mod 3
+  let (a, b) = ((k+1) mod 3, (k+2) mod 3)
   s[1][a] = s[2][a]
   s[3][b] = s[2][b]
   let v: seq[Vertex] = @[v1, newVertexFromSeq(s[1]), v3, newVertexFromSeq(s[3])]
@@ -46,25 +46,24 @@ proc newBoxPolygon(v1, v3: Vertex): Polygon =
 
 
 # PolygonMesh
-type PolygonMesh = object
-  polygons: seq[Polygon]
+type PolygonMesh* = object
+  polygons*: seq[Polygon]
 
-
-proc add(m: var PolygonMesh, p: Polygon) {
+proc add*(m: var PolygonMesh, p: Polygon) =
   m.polygons.add(p)
-}
-proc newPolygonMesh(): PolygonMesh =
+
+proc newPolygonMesh*(): PolygonMesh =
   PolygonMesh(polygons: @[])
 
-proc newCubePolygonMesh(v1, v2: Vertex, fill: bool, letter: Rune): PolygonMesh =
+proc newCubePolygonMesh*(v1, v2: Vertex, fill: bool, letter: Rune): PolygonMesh =
   var m = newPolygonMesh()
   var sl = @[v1.toSeq, v2.toSeq]
   var ptn1 = @[0, 1, 1, 0]
   var ptn2 = @[0, 0, 1, 1]
   for s in sl:
     for j in 0..<3:
-      a, b := (j+1) mod 3, (j+2) mod 3
-      var verts = seq[Vertex]
+      let (a, b) = ((j+1) mod 3, (j+2) mod 3)
+      var verts: seq[Vertex] = @[]
       for k in 0..<4:
         var f = @[s[0], s[1], s[2]]
         f[a] = sl[ ptn1[k] ][a]
@@ -76,12 +75,12 @@ proc newCubePolygonMesh(v1, v2: Vertex, fill: bool, letter: Rune): PolygonMesh =
       m.add(p)
   m
 
-proc rotateY(m: PolygonMesh, rot float64) *PolygonMesh {
+proc rotateY*(m: PolygonMesh, axis: Vertex, rot: float): PolygonMesh =
   var nm = newPolygonMesh()
   for p in m.polygons:
     var vertices: seq[Vertex]
     for v in p.vertices:
-      let nv = v.rotateY(rot)
+      let nv = v.rotateY(axis, rot)
       vertices.add(nv)
     var np = newPolygon(vertices)
     np.border = p.border
